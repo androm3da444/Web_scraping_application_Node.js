@@ -1,0 +1,19 @@
+ul {
+  list-style-type: none;
+}
+li {
+  margin-bottom: 10px;
+}
+.listing-image img {
+  max-height: 200px;
+  max-width: 200px;
+}
+.hero-spacer {
+    margin-top: 40px;
+}
+.hero-feature {
+    margin-bottom: 30px;
+}
+footer {
+    margin: 50px 0;
+}

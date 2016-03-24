@@ -1,0 +1,87 @@
+<div class="container">
+    <header class="jumbotron hero-spacer">
+        <h1>Scraping Test Page</h1>
+    </header>
+    <div class="col-xs-12">
+        <div class="item-body"
+            ng-show="scrapePostForm">
+            <form ng-submit="addScrapePost()"
+                style="margin-top:30px">
+                <h3>Find an Item</h3>
+                <div class="form-group">
+                    <input type="text"
+                              class="form-control"
+                              placeholder="Title"
+                              ng-model="item.title">
+                </div>
+                <div class="form-group">
+                    <input type="text"
+                              class="form-control"
+                              placeholder="Link URL  (Pinterest)"
+                              ng-model="item.link"
+                              ng-disabled="gotScrapeResults">
+                </div>
+
+                <div class="spinner"
+                        ng-show="loading">
+                    <img src="images/spinner.gif">
+                </div>
+
+                <div class="col-md-6" id="alertContainer"></div>
+                <div class="listing-details"
+                        ng-show="showScrapeDetails">
+                    <div class="form-group">
+                        <div class="row listing-description-row">
+                            <label for="description"
+                                      class="col-xs-12">Description</label></div>
+                            <textarea class="form-control"
+                            rows="3"
+                            ng-model="item.description">
+                            </textarea>
+                        </div>
+                        <div class="form-group">
+                            <div class="listing-image">
+                                <img src="{{item.imgThumb}}"
+                                class="img-thumbnail img-responsive">
+                            </div>
+                        </div>
+                        <button type="submit"
+                        class="btn btn-primary">Submit</button>
+                        <button type="button"
+                        class="btn btn-default"
+                        ng-click="hide()">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="container">
+        <!-- Show Images of items -->
+        <div class="panel panel-default">
+            <div class="panel-body">
+                <div class="row">
+                    <div class="col-lg-12">
+                        <h1 class="page-header">All items:
+                        <span class="label label-info">{{ items.length }}</span> items</h1>
+                        <ul class="nav nav-tabs nav-stacked col-md-4 col-lg-4 col-sm-6"
+                            ng-repeat="item in items">
+                            <li>
+                                <span class="input-group-addon">
+                                    <a href="#"
+                                        ng-click="deleteitem(item)">
+                                        <span class="glyphicon glyphicon-remove pull-left"></span></a>
+                                        <a ui-sref="item ({ itemId: item._id })"
+                                            data-title="{{item.title}}"
+                                            data-animation="am-flip-x"
+                                        bs-tooltip>{{ item.title }}</a></li>
+                                        <li>
+                                            <span class="input-group-addon listing-image">
+                                                <a ui-sref="item ({ itemId: item._id })">
+                                                    <img class="thumbnail img-responsive"
+                                                ng-src="{{ item.image }}"></a></span></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
