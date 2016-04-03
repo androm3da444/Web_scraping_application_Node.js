@@ -1,118 +1,88 @@
-var _ = require('lodash'),
-    domEach = require('../utils').domEach;
-var toString = Object.prototype.toString;
+var expect = require('expect.js');
+var cheerio = require('../..');
 
-/**
- * Set / Get css.
- *
- * @param {String|Object} prop
- * @param {String} val
- * @return {self}
- * @api public
- */
+describe('$(...)', function() {
 
-exports.css = function(prop, val) {
-  if (arguments.length === 2 ||
-    // When `prop` is a "plain" object
-    (toString.call(prop) === '[object Object]')) {
-    return domEach(this, function(idx, el) {
-      setCss(el, prop, val, idx);
+  describe('.css', function() {
+    it('(prop): should return a css property value', function() {
+      var el = cheerio('<li style="hai: there">');
+      expect(el.css('hai')).to.equal('there');
     });
-  } else {
-    return getCss(this[0], prop);
-  }
-};
 
-/**
- * Set styles of all elements.
- *
- * @param {String|Object} prop
- * @param {String} val
- * @param {Number} idx - optional index within the selection
- * @return {self}
- * @api private
- */
-
-function setCss(el, prop, val, idx) {
-  if ('string' == typeof prop) {
-    var styles = getCss(el);
-    if (typeof val === 'function') {
-      val = val.call(el, idx, styles[prop]);
-    }
-
-    if (val === '') {
-      delete styles[prop];
-    } else if (val != null) {
-      styles[prop] = val;
-    }
-
-    el.attribs.style = stringify(styles);
-  } else if ('object' == typeof prop) {
-    Object.keys(prop).forEach(function(k){
-      setCss(el, k, prop[k]);
+    it('([prop1, prop2]): should return the specified property values as an object', function() {
+      var el = cheerio('<li style="margin: 1px; padding: 2px; color: blue;">');
+      expect(el.css(['margin', 'color'])).to.eql({ margin: '1px', color: 'blue' });
     });
-  }
-}
 
-/**
- * Get parsed styles of the first element.
- *
- * @param {String} prop
- * @return {Object}
- * @api private
- */
+    it('(prop, val): should set a css property', function() {
+      var el = cheerio('<li style="margin: 0;"></li><li></li>');
+      el.css('color', 'red');
+      expect(el.attr('style')).to.equal('margin: 0; color: red;');
+      expect(el.eq(1).attr('style')).to.equal('color: red;');
+    });
 
-function getCss(el, prop) {
-  var styles = parse(el.attribs.style);
-  if (typeof prop === 'string') {
-    return styles[prop];
-  } else if (Array.isArray(prop)) {
-    return _.pick(styles, prop);
-  } else {
-    return styles;
-  }
-}
+    it('(prop, ""): should unset a css property', function() {
+      var el = cheerio('<li style="padding: 1px; margin: 0;">');
+      el.css('padding', '');
+      expect(el.attr('style')).to.equal('margin: 0;');
+    });
 
-/**
- * Stringify `obj` to styles.
- *
- * @param {Object} obj
- * @return {Object}
- * @api private
- */
+    it('(prop): should not mangle embedded urls', function() {
+      var el = cheerio('<li style="background-image:url(http://example.com/img.png);">');
+      expect(el.css('background-image')).to.equal('url(http://example.com/img.png)');
+    });
 
-function stringify(obj) {
-  return Object.keys(obj || {})
-    .reduce(function(str, prop){
-      return str += ''
-        + (str ? ' ' : '')
-        + prop
-        + ': '
-        + obj[prop]
-        + ';';
-    }, '');
-}
+    it('(prop): should ignore blank properties', function() {
+      var el = cheerio('<li style=":#ccc;color:#aaa;">');
+      expect(el.css()).to.eql({color:'#aaa'});
+    });
 
-/**
- * Parse `styles`.
- *
- * @param {String} styles
- * @return {Object}
- * @api private
- */
+    it('(prop): should ignore blank values', function() {
+      var el = cheerio('<li style="color:;position:absolute;">');
+      expect(el.css()).to.eql({position:'absolute'});
+    });
 
-function parse(styles) {
-  styles = (styles || '').trim();
+    describe('(prop, function):', function() {
+      beforeEach(function() {
+        this.$el = cheerio('<div style="margin: 0px;"></div><div style="margin: 1px;"></div><div style="margin: 2px;">');
+      });
 
-  if (!styles) return {};
+      it('should iterate over the selection', function() {
+        var count = 0;
+        var $el = this.$el;
+        this.$el.css('margin', function(idx, value) {
+          expect(idx).to.equal(count);
+          expect(value).to.equal(count + 'px');
+          expect(this).to.equal($el[count]);
+          count++;
+        });
+        expect(count).to.equal(3);
+      });
 
-  return styles
-    .split(';')
-    .reduce(function(obj, str){
-      var n = str.indexOf(':');
-      // skip if there is no :, or if it is the first/last character
-      if (n < 1 || n === str.length-1) return obj;
-      obj[str.slice(0,n).trim()] = str.slice(n+1).trim();
-      return obj;
-    }, {});
-}
+      it('should set each attribute independently', function() {
+        var values = ['4px', '', undefined];
+        this.$el.css('margin', function(idx) {
+          return values[idx];
+        });
+        expect(this.$el.eq(0).attr('style')).to.equal('margin: 4px;');
+        expect(this.$el.eq(1).attr('style')).to.equal('');
+        expect(this.$el.eq(2).attr('style')).to.equal('margin: 2px;');
+      });
+    });
+
+    it('(obj): should set each key and val', function() {
+      var el = cheerio('<li style="padding: 0;"></li><li></li>');
+      el.css({ foo: 0 });
+      expect(el.eq(0).attr('style')).to.equal('padding: 0; foo: 0;');
+      expect(el.eq(1).attr('style')).to.equal('foo: 0;');
+    });
+
+    describe('parser', function(){
+      it('should allow any whitespace between declarations', function() {
+        var el = cheerio('<li style="one \t:\n 0;\n two \f\r:\v 1">');
+        expect(el.css(['one', 'two'])).to.eql({ one: 0, two: 1 });
+      });
+    });
+  });
+
+});
