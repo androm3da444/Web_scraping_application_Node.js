@@ -1,54 +1,120 @@
-// https://github.com/jquery/jquery/blob/2.1.3/src/manipulation/var/rcheckableType.js
-// https://github.com/jquery/jquery/blob/2.1.3/src/serialize.js
-var _ = require('lodash'),
-    submittableSelector = 'input,select,textarea,keygen',
-    rCRLF = /\r?\n/g,
-    rcheckableType = /^(?:checkbox|radio)$/i,
-    rsubmitterTypes = /^(?:submit|button|image|reset|file)$/i;
+var expect = require('expect.js'),
+  cheerio = require('../..'),
+  forms = require('../fixtures').forms;
 
-exports.serializeArray = function() {
-  // Resolve all form elements from either forms or collections of form elements
-  var Cheerio = this.constructor;
-  return this.map(function() {
-      var elem = this;
-      var $elem = Cheerio(elem);
-      if (elem.name === 'form') {
-        return $elem.find(submittableSelector).toArray();
-      } else {
-        return $elem.filter(submittableSelector).toArray();
-      }
-    }).filter(function() {
-      var $elem = Cheerio(this);
-      var type = $elem.attr('type');
+describe('$(...)', function() {
 
-      // Verify elements have a name (`attr.name`) and are not disabled (`:disabled`)
-      return $elem.attr('name') && !$elem.is(':disabled') &&
-        // and cannot be clicked (`[type=submit]`) or are used in `x-www-form-urlencoded` (`[type=file]`)
-        !rsubmitterTypes.test(type) &&
-        // and are either checked/don't have a checkable state
-        ($elem.attr('checked') || !rcheckableType.test(type));
-    // Convert each of the elements to its value(s)
-    }).map(function(i, elem) {
-      var $elem = Cheerio(elem);
-      var name = $elem.attr('name');
-      var val = $elem.val();
+  var $;
 
-      // If there is no value set (e.g. `undefined`, `null`), then return nothing
-      if (val == null) {
-        return null;
-      } else {
-        // If we have an array of values (e.g. `<select multiple>`), return an array of key/value pairs
-        if (Array.isArray(val)) {
-          return _.map(val, function(val) {
-            // We trim replace any line endings (e.g. `\r` or `\r\n` with `\r\n`) to guarantee consistency across platforms
-            //   These can occur inside of `<textarea>'s`
-            return {name: name, value: val.replace( rCRLF, '\r\n' )};
-          });
-        // Otherwise (e.g. `<input type="text">`, return only one key/value pair
-        } else {
-          return {name: name, value: val.replace( rCRLF, '\r\n' )};
+  beforeEach(function() {
+    $ = cheerio.load(forms);
+  });
+
+  describe('.serializeArray', function() {
+
+    it('() : should get form controls', function() {
+      expect($('form#simple').serializeArray()).to.eql([
+        {
+          name: 'fruit',
+          value: 'Apple'
         }
-      }
-    // Convert our result to an array
-    }).get();
-};
+      ]);
+    });
+
+    it('() : should get nested form controls', function() {
+      expect($('form#nested').serializeArray()).to.have.length(2);
+      var data = $('form#nested').serializeArray();
+      data.sort(function (a, b) {
+        return a.value - b.value;
+      });
+      expect(data).to.eql([
+        {
+          name: 'fruit',
+          value: 'Apple'
+        },
+        {
+          name: 'vegetable',
+          value: 'Carrot'
+        }
+      ]);
+    });
+
+    it('() : should not get disabled form controls', function() {
+      expect($('form#disabled').serializeArray()).to.eql([]);
+    });
+
+    it('() : should not get form controls with the wrong type', function() {
+      expect($('form#submit').serializeArray()).to.eql([
+        {
+          name: 'fruit',
+          value: 'Apple'
+        }
+      ]);
+    });
+
+    it('() : should get selected options', function() {
+      expect($('form#select').serializeArray()).to.eql([
+        {
+          name: 'fruit',
+          value: 'Orange'
+        }
+      ]);
+    });
+
+    it('() : should not get unnamed form controls', function() {
+      expect($('form#unnamed').serializeArray()).to.eql([
+        {
+          name: 'fruit',
+          value: 'Apple'
+        }
+      ]);
+    });
+
+    it('() : should get multiple selected options', function() {
+      expect($('form#multiple').serializeArray()).to.have.length(2);
+      var data = $('form#multiple').serializeArray();
+      data.sort(function (a, b) {
+        return a.value - b.value;
+      });
+      expect(data).to.eql([
+        {
+          name: 'fruit',
+          value: 'Apple'
+        },
+        {
+          name: 'fruit',
+          value: 'Orange'
+        }
+      ]);
+    });
+
+    it('() : should get individually selected elements', function() {
+      var data = $('form#nested input').serializeArray();
+      data.sort(function (a, b) {
+        return a.value - b.value;
+      });
+      expect(data).to.eql([
+        {
+          name: 'fruit',
+          value: 'Apple'
+        },
+        {
+          name: 'vegetable',
+          value: 'Carrot'
+        }
+      ]);
+
+    });
+
+    it('() : should standardize line breaks', function() {
+      expect($('form#textarea').serializeArray()).to.eql([
+        {
+          name: 'fruits',
+          value: 'Apple\r\nOrange'
+        }
+      ]);
+    });
+
+  });
+
+});
