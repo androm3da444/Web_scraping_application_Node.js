@@ -1,8 +1,11 @@
-module.exports = {
-	trueFunc: function trueFunc(){
-		return true;
-	},
-	falseFunc: function falseFunc(){
-		return false;
-	}
-};
+/**
+ * Export cheerio (with )
+ */
+
+exports = module.exports = require('./lib/cheerio');
+
+/*
+  Export the version
+*/
+
+exports.version = require('./package').version;
