@@ -1,11 +1,7 @@
+
 /**
- * Export cheerio (with )
+ * Export lib/mongoose
+ *
  */
 
-exports = module.exports = require('./lib/cheerio');
-
-/*
-  Export the version
-*/
-
-exports.version = require('./package').version;
+module.exports = require('./lib/');
