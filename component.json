@@ -1,19 +1,14 @@
 {
-  "name": "debug",
-  "repo": "visionmedia/debug",
-  "description": "small debugging utility",
-  "version": "2.2.0",
+  "name": "sliced",
+  "version": "0.0.5",
+  "description": "A faster Node.js alternative to Array.prototype.slice.call(arguments)",
+  "repo" : "aheckmann/sliced",
   "keywords": [
-    "debug",
-    "log",
-    "debugger"
+    "arguments",
+    "slice",
+    "array"
   ],
-  "main": "browser.js",
-  "scripts": [
-    "browser.js",
-    "debug.js"
-  ],
-  "dependencies": {
-    "rauchg/ms.js": "0.7.1"
-  }
+  "scripts": ["lib/sliced.js", "index.js"],
+  "author": "Aaron Heckmann <aaron.heckmann+github@gmail.com>",
+  "license": "MIT"
 }
